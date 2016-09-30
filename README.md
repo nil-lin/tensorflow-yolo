@@ -32,3 +32,10 @@
     ln -s $VOCdevkit VOCdevkit2007
     ```
     Using symlinks is a good idea because you will likely want to share the same PASCAL dataset installation between multiple projects.
+
+### convert the Pascal-voc data to binary data
+
+```
+cd tools/
+python make_voc2007_data.py
+```
