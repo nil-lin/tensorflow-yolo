@@ -6,7 +6,10 @@ import os
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
+<<<<<<< HEAD
 import numpy as np
+=======
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -41,7 +44,11 @@ def _variable_on_cpu(name, shape, initializer):
         var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
     return var
 
+<<<<<<< HEAD
 def _variable_with_weight_decay(name,shape,stddev,wd):
+=======
+def _variable_with_weight_decay(name,shape,stdeev,wd):
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
     #name:name of variable
     #shape:list of ints
     #stdeev:stadard deviation of a truncted gausisan
@@ -134,7 +141,11 @@ def inference(images):
         conv6=tf.nn.relu(bias,name=scope.name)
    
     #pool3
+<<<<<<< HEAD
     pool3=tf.nn.max_pool(conv6,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME',name='pool3')
+=======
+    pool3=tf.nn.max_pool(conv5,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME',name='pool3')
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
 
      #conv7
     with tf.variable_scope('conv7') as scope:
@@ -142,7 +153,10 @@ def inference(images):
                                             shape=[1,1,512,256],
                                             stddev=5e-2,
                                             wd=0.0005)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
         conv=tf.nn.conv2d(pool3,kernel,[1,1,1,1],padding='SAME')
         biases=_variable_on_cpu('biases',[256],tf.constant_initializer(0.0))
         bias=tf.nn.bias_add(conv,biases)
@@ -182,7 +196,11 @@ def inference(images):
         conv10=tf.nn.relu(bias,name=scope.name)
 
     #conv11
+<<<<<<< HEAD
     with tf.variable_scope('conv11') as scope:
+=======
+     with tf.variable_scope('conv11') as scope:
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
         kernel=_variable_with_weight_decay('weights',
                                             shape=[1,1,512,256],
                                             stddev=5e-2,
@@ -204,7 +222,11 @@ def inference(images):
         conv12=tf.nn.relu(bias,name=scope.name)
 
     #conv13
+<<<<<<< HEAD
     with tf.variable_scope('conv13') as scope:
+=======
+     with tf.variable_scope('conv13') as scope:
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
         kernel=_variable_with_weight_decay('weights',
                                             shape=[1,1,512,256],
                                             stddev=5e-2,
@@ -248,7 +270,11 @@ def inference(images):
         conv16=tf.nn.relu(bias,name=scope.name)
 
     #pool4
+<<<<<<< HEAD
     pool4=tf.nn.max_pool(conv16,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME',name='pool4')
+=======
+     pool4=tf.nn.max_pool(conv5,ksize=[1,2,2,1],strides=[1,2,2,1],padding='SAME',name='pool4')
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
 
     #conv17
     with tf.variable_scope('conv17') as scope:
@@ -344,10 +370,17 @@ def inference(images):
         dim=reshape.get_shape()[1].value
         weights=_variable_with_weight_decay('weights',
                                             shape=[dim,4096],
+<<<<<<< HEAD
                                             stddev=5e-2,
                                             wd=0.0005)
         biases=_variable_on_cpu('biases',[4096],tf.constant_initializer(0.0))
         fc1=tf.nn.relu(tf.matmul(reshape,weights)+biases,name=scope.name)
+=======
+                                            stdeev=5e-2,
+                                            wd=0.0005)
+        biases=_variable_on_cpu('biases',[4096],tf.constant_initializer(0.0))
+        fc1=tf.nn.relu(tf.matmul(conv24,weights)+biases,name=scope.name)
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
 
     #drop out
     keep_prob = tf.placeholder(tf.float32)
@@ -360,8 +393,13 @@ def inference(images):
     with tf.variable_scope('fc2') as scope:
         outputsize=DEFAULT_size*DEFAULT_size*(5*DEFAULT_BOX+NUM_CLASSES)
         weights=_variable_with_weight_decay('weights',
+<<<<<<< HEAD
                                             shape=[4096,outputsize],
                                             stddev=5e-2,
+=======
+                                            shape=[4096,ouputsize],
+                                            stdeev=5e-2,
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
                                             wd=0.0005)
         biases=_variable_on_cpu('biases',[outputsize],tf.constant_initializer(0.0))
         fc2=tf.nn.relu(tf.matmul(fc1_drop,weights)+biases,name=scope.name)
@@ -382,9 +420,15 @@ def loss(fc2,groudtruth):
     #batch_class is a tensor with[FLAGS.batch_class,20],some maybe none
     
     #next we need to judge the center of groundtruth
+<<<<<<< HEAD
     box_size=tf.slice(g_box,[0,0,3],[FLAGS.batch_size,20,2])
 
     box_center=tf.slice(g_box,[0,0,1],[FLAGS.batch_size,20,2])
+=======
+    box_size=tf.slice(g_box,[0,0,3],[FLAGS.batch_class,20,2])
+
+    box_center=tf.slice(g_box,[0,0,1],[FLAGS.batch_class,20,2])
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
     
     size=tf.constant([DEFAULT_size],dtype=tf.int32)
     #now we have the box,next we should ensure which box to be responsible for predictor
@@ -396,7 +440,11 @@ def loss(fc2,groudtruth):
     #the index of box should be calculate in format box[0]*DEFAULT_size+box[1] 
     op1=tf.tile([DEFAULT_size,1],[FLAGS.batch_size])
     op2=tf.reshape(op1,[FLAGS.batch_size,2,1])
+<<<<<<< HEAD
     index=tf.batch_matmul(tf.cast(index_side, tf.int32),op2)
+=======
+    index=tf.batch_matmul(index_side,op2)
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
     #index is a tensor with [batch_size,20] ,this means the box to be responsibel for the prediction        
     #next we should calculate the box regression loss
     regular_size=tf.truediv(box_size,[IMAGE_SIZE])
@@ -405,7 +453,11 @@ def loss(fc2,groudtruth):
     cell_len=tf.constant([IMAGE_SIZE/DEFAULT_size*1.0,0,0,IMAGE_SIZE/DEFAULT_size*1.0],dtype=tf.float32)
     op3=tf.tile(cell_len,[FLAGS.batch_size])
     op4=tf.reshape(op3,[FLAGS.batch_size,2,2])
+<<<<<<< HEAD
     cell_left=tf.batch_matmul(index_side,op4)
+=======
+    cell_left=tf.add(tf.batch_matmul(index_side,op4)
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
     cell_left=tf.cast(cell_left,tf.int32)
     offset=tf.abs(tf.sub(cell_left,box_center))
     regular_offset=tf.truediv(tf.cast(offset,tf.float32),[IMAGE_SIZE/DEFAULT_size*1.0])
@@ -501,9 +553,13 @@ def IOU(regular_offset,regular_size,batch_class,index_side,predict):
     temp_box=np.array([20*FLAGS.batch_size*DEFAULT_BOX,4])
     for image in range(FLAGS.batch_size):
         for groundtruth in range(20):
+<<<<<<< HEAD
             #tf.cond(tf.cast(batch_class[image,groundtruth,0], tf.float32) > [-0.5], )
             #if tf.cast(batch_class[image,groundtruth,0], tf.float32) > [-0.5]:
             if True:
+=======
+            if tf.greater(tf.cast(batch_calss[image,groundtruth],tf.float32),[-0.5]):
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
             # enusre the box is a obj
                 for box in range(DEFAULT_BOX):
                     box_size=predict[image,index_side[image,groundtruth,box],index_side[image,groundtruth,box],box*5:box*5+4]
@@ -514,7 +570,11 @@ def IOU(regular_offset,regular_size,batch_class,index_side,predict):
                 #this op is for none groudtruth
                 for box in range(DEFAULT_BOX):
                     for i in range(4):
+<<<<<<< HEAD
                         temp_box[image*20+groundtruth*DEFAULT_BOX+box,i]=0
+=======
+                temp_box[image*20+groundtruth*DEFAULT_BOX+box,i]=0
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
     regular_pre_box=tf.pack(temp_box)
     #after th op above we get the regular_pre_box
     
@@ -539,6 +599,7 @@ def IOU(regular_offset,regular_size,batch_class,index_side,predict):
     output=iou(ltrd_pre,ltrd_gr)
     
     return output
+<<<<<<< HEAD
 
 def train(total_loss, global_step):
   """Train CIFAR-10 model.
@@ -594,3 +655,5 @@ def train(total_loss, global_step):
     train_op = tf.no_op(name='train')
 
   return train_op
+=======
+>>>>>>> 445e8e9380daec1088b7456fae88794a58fb1c84
