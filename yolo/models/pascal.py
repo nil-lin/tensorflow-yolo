@@ -422,43 +422,48 @@ def loss(fc2,groudtruth):
     iou_re=tf.reshape(iou_pre_gt,[FLAGS.batch_size,20,DEFAULT_BOX])
     for i in range(FLAGS.batch_size):
         for j in range(20):
-            if tf.greater(tf.cast(batch_calss[i,j,0],tf.float32),[-0.5]):
-                l_index=tf.argmax(iou_re,2)
-                temp_loss_x=tf.square(regular_offset[i,j,0]-predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5])
-                temp_loss_y=tf.square(regular_offset[i,j,1]-predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+1])
-                temp_loss_w=tf.square(tf.sqrt(regular_size[i,j,0])-tf.maximum(predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+2],[0.0]))
-                temp_loss_h=tf.square(tf.sqrt(regular_size[i,j,1])-tf.maximum(predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+3],[0.0]))
-                temp_loss_obj_cls=tf.square(1-predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+4])
-                temp_mat=np.zeros([1,NUM_CLASSES])
-                temp_mat[0, batch_class[i,j,0]]=1
-                temp_loss_each=tf.square(tf.pack(temp_mat)-predict[i, index_side[i,j,0], index_side[i,j,1],5*DEFAULT_BOX:5*DEFAULT_BOX+NUM_CLASSES])
+            #if tf.greater(tf.cast(batch_calss[i,j,0],tf.float32),[-0.5]):
+            bool1=tf.greater(tf.cast(batch_calss[i,j,0],tf.float32),[-0.5])
+            index_bool=tf.cast(bool1,dtype=tf.float32)
+            l_index=tf.argmax(iou_re,2)
+            temp_loss_x=tf.square(regular_offset[i,j,0]-predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5])
+            temp_loss_y=tf.square(regular_offset[i,j,1]-predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+1])
+            temp_loss_w=tf.square(tf.sqrt(regular_size[i,j,0])-tf.maximum(predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+2],[0.0]))
+            temp_loss_h=tf.square(tf.sqrt(regular_size[i,j,1])-tf.maximum(predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+3],[0.0]))
+            temp_loss_obj_cls=tf.square(1-predict[i, index_side[i,j,0], index_side[i,j,1],l_index*5+4])
+            temp_mat=np.zeros([1,NUM_CLASSES])
+            temp_mat[0, batch_class[i,j,0]]=1
+            temp_loss_each=tf.square(tf.pack(temp_mat)-predict[i, index_side[i,j,0], index_side[i,j,1],5*DEFAULT_BOX:5*DEFAULT_BOX+NUM_CLASSES])
                 
-                tf.add_to_collection('losses',temp_loss_x*COORD)
-                tf.add_to_collection('losses',temp_loss_y*COORD) 
-                tf.add_to_collection('losses',temp_loss_w*COORD)
-                tf.add_to_collection('losses',temp_loss_h*COORD)
-                tf.add_to_collection('losses',temp_loss_obj_cls)
-                tf.add_to_collection('losses',temp_loss_each)
+            tf.add_to_collection('losses',tf.matmul(temp_loss_x*COORD,index_bool))
+            tf.add_to_collection('losses',tf.matmul(temp_loss_y*COORD,index_bool)) 
+            tf.add_to_collection('losses',tf.matmul(temp_loss_w*COORD,index_bool))
+            tf.add_to_collection('losses',tf.matmul(temp_loss_h*COORD,index_bool))
+            tf.add_to_collection('losses',tf.matmul(temp_loss_obj_cls,index_bool))
+            tf.add_to_collection('losses',tf.matmul(temp_loss_each,index_bool))
     #now we have calculate the cordinates loss ,next cls loss for noobj
 
     for i in range(FLAGS.batch_size):
         for j in range(20):
-            if tf.greater(tf.cast(batch_calss[i,j,0],tf.float32),[-0.5]):
-                for t in range(DEFAULT_size):
-                    for m in range(DEFAULT_size):
-                        for n in range(DEFAULT_BOX):
-                            if index_side[i,j,0]==t and index_side[i,j,1]==m and l_index==tf.argmax(iou_re,2):
-                                break
-                            temp_loss_noob=tf.square(predict[i, t, m, n*5+4]-0)
-                            tf.add_to_collection('losses',temp_loss_noob*NOOBJ)
+            #if tf.greater(tf.cast(batch_calss[i,j,0],tf.float32),[-0.5]):
+            bool1=tf.greater(tf.cast(batch_calss[i,j,0],tf.float32),[-0.5])
+            index_bool=tf.cast(bool1,dtype=tf.float32)
+            for t in range(DEFAULT_size):
+                for m in range(DEFAULT_size):
+                    for n in range(DEFAULT_BOX):
+                        bool2=tf.not_equal(tf.cast(index_side[i,j,0],tf.int32),[t])
+                        bool3=tf.not_equal(tf.cast(index_side[i,j,1],tf.int32),[m])
+                        
+                        bool_temp=tf.matmul(tf.cast(bool2,tf.float32),tf.cast(bool3,tf.float32))
+                        bool_temp=tf.abs(1-bool_temp)
+                        bool_temp=tf.matmul(index_bool,bool_temp)
+                        
+                        #index_bool=tf.cast(tf.where(bool_temp),dtype=tf.float32)
+                        
+                        temp_loss_noob=tf.square(tf.matmul((predict[i, t, m, n*5+4]-0),bool_temp))
+                        tf.add_to_collection('losses',temp_loss_noob*NOOBJ)
 
     return tf.add_n(tf.get_collection('losses'),name='total_loss')
-
-
-
-
-
-
 
 def iou(boxs1, boxs2):
     """calculate the iou of boxs1 and boxs2
@@ -503,6 +508,7 @@ def IOU(regular_offset,regular_size,batch_class,index_side,predict):
     means the each box's IOU with the groundtruth.
     '''
     #first we should extract each box in predict
+    '''
     temp_box=np.array([20*FLAGS.batch_size*DEFAULT_BOX,4])
     for image in range(FLAGS.batch_size):
         for groundtruth in range(20):
@@ -520,20 +526,35 @@ def IOU(regular_offset,regular_size,batch_class,index_side,predict):
                 for box in range(DEFAULT_BOX):
                     for i in range(4):
                         temp_box[image*20+groundtruth*DEFAULT_BOX+box,i]=0
-    regular_pre_box=tf.pack(temp_box)
+    '''
+    result=tf.constant([1.0,1.0,1.0,1.0])
+    res=tf.reshape(result,[1,4])
+    for image in range(FLAGS.batch_size):
+        for groundtruth in range(20):
+            temp=tf.slice(predict,tf.pack([image, index_side[image,groundtruth,0], index_side[image,groundtruth, 1], 0],[1, 1, 1, 4])
+            temp1=tf.slice(predict, tf.pack([image, index_side[image,groundtruth,0], index_side[image,groundtruth, 1], 5]),[1, 1, 1, 4])
+            temp=tf.reshape(temp,[1,4])
+            temp1=tf.reshape(temp1,[1,4])
+            res=tf.pack(res,temp,temp1)
+    
+    #result is a tensor with shape [batch*]
+            
+    regular_pre_box=tf.slice(res,[1,0],[FLAGS.batch_size*20*2, 4])
     #after th op above we get the regular_pre_box
     
     #now we should deal with the groundtruth,convert it's shape as regular_pre_box
-    temp_box1=np.array([20*FLAGS.batch_size*DEFAULT_BOX,4])
+    #temp_box1=np.array([20*FLAGS.batch_size*DEFAULT_BOX,4])
+    result1=tf.constant([1.0,1.0,1.0,1.0])
+    res1=tf.reshape(result,[1,4])
     for image in range(FLAGS.batch_size):
         for groundtruth in range(20):
-            for box in range(DEFAULT_BOX):
-            #ground truth only have one box ,we shoulf repeat it DEFAULT_BOX times to match the predict
-                for i in range(2):
-                    temp_box1[image*20+groundtruth*DEFAULT_BOX+box,i]=regular_offset[image,groundtruth,i]
-                for j in range(2):
-                    temp_box1[image*20+groundtruth*DEFAULT_BOX+box,j+2]=regular_offset[image,groundtruth,j]
-    regular_gr_box=tf.pack(temp_box1)
+            temp1=tf.slice(regular_offset,[image,groundtruth,0],[1,1,2])
+            temp2=tf.slice(regular_size,[image,groundtruth,0],[1,1,2])
+            temp1=tf.reshape(temp1,[1,2])
+            temp2=tf.reshape(temp2,[1,2])
+            temp=tf.concat(1,[temp1,temp2])
+            res1=tf.pack(res1,temp,temp)
+    regular_gr_box=tf.slice(res1,[1,0],[FLAGS.batch_size*20*2, 4])
     
     #next we should adjust it as the laft-top and right-down
     temp_matrix=tf.constant([[1.0,0.0,1.0,0.0], [0.0,1.0,0.0,1.0], [-0.5,0.0,0.5,0.0], [0,-0.5,0.0,0.5]])
@@ -544,7 +565,6 @@ def IOU(regular_offset,regular_size,batch_class,index_side,predict):
     output=iou(ltrd_pre,ltrd_gr)
     
     return output
-<<<<<<< HEAD
 
 def train(total_loss, global_step):
   """Train CIFAR-10 model.
